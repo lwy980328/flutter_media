@@ -1,8 +1,14 @@
 
-
+import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_media/bean/infoList_bean.dart';
+import 'package:flutter_media/net/api.dart';
+import 'package:flutter_media/net/dio_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_media/bean/overview_bean.dart';
+import 'package:flutter_media/util/common.dart';
 import 'package:flutter_media/util/image_utils.dart';
+import 'package:flutter_media/util/utils.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class FirstPage extends StatefulWidget {
@@ -11,12 +17,42 @@ class FirstPage extends StatefulWidget {
 }
 
 class _FirstPageState extends State<FirstPage> {
-  List list = List();
-  int pageNum = 0;
+  OverviewBean scriptData = OverviewBean();
+  List<InfoListBean> infoList = List();
+  int pageNum = 1;
 
 
+  _getScript(){
+    DioUtils.instance.requestNetwork<OverviewBean>(
+        Method.get, Api.GET_SCRIPT, queryParameters: {
+          'roleId': Utils.sharedPreferences.getString(Constant.role_Id),
+          'userId': Utils.sharedPreferences.getString(Constant.user_Id),
+    },
+        onSuccess: (data) {
+      setState(() {
+        scriptData = data;
+        print("获取个人概况成功:${scriptData.toString()}");
+      });
+    }, onError: (code, msg) {
+      print("获取个人概况失败");
+    });
+  }
   _requestData() {
-
+    DioUtils.instance.requestNetwork<InfoListBean>(
+        Method.get, Api.GET_BOARD_INFO, isList: true, queryParameters: {
+      'currentPageNum': pageNum,
+      'pageSize': 10,
+      'type': 0,
+      'userId': Utils.sharedPreferences.getString(Constant.user_Id),
+    },
+        onSuccessList: (data) {
+          setState(() {
+            infoList = data;
+            print("获取布告栏成功:${infoList.toString()}");
+          });
+        }, onError: (code, msg) {
+      print("获取布告栏失败");
+    });
   }
 
   RefreshController _refreshController =
@@ -24,7 +60,7 @@ class _FirstPageState extends State<FirstPage> {
 
   void _onRefresh() async {
 //    Toast.show('这是下拉刷新操作');
-    if (list == null || list.length == 0) {
+    if (infoList == null || infoList.length == 0) {
       _requestData();
     } else {
       _refreshController.refreshCompleted();
@@ -44,6 +80,7 @@ class _FirstPageState extends State<FirstPage> {
   @override
   void initState() {
     super.initState();
+    _getScript();
     _requestData();
   }
 
@@ -89,7 +126,7 @@ class _FirstPageState extends State<FirstPage> {
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
-                                            Text("289",
+                                            Text("${scriptData.unReadMessageNum}",
                                               style: TextStyle(
                                                   fontSize: 30,color: Colors.white
                                               ),),
@@ -116,12 +153,12 @@ class _FirstPageState extends State<FirstPage> {
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
-                                            Text("289",
+                                            Text("${scriptData.waitCheckNum}",
                                               style: TextStyle(
                                                   fontSize: 30,color: Colors.white
                                               ),),
                                             SizedBox(width: 5,),
-                                            Text("条",
+                                            Text("个",
                                               style: TextStyle(
                                                   fontSize: 16,color: Colors.white
                                               ),),
@@ -129,7 +166,7 @@ class _FirstPageState extends State<FirstPage> {
                                         ),
 
                                         SizedBox(height: 5,),
-                                        Text("未读消息",
+                                        Text("爆款内容",
                                           style: TextStyle(
                                               fontSize: 16,color: Colors.white
                                           ),),
@@ -147,12 +184,12 @@ class _FirstPageState extends State<FirstPage> {
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
-                                            Text("289",
+                                            Text("${scriptData.waitPublishNum}",
                                               style: TextStyle(
                                                   fontSize: 30,color: Colors.white
                                               ),),
                                             SizedBox(width: 5,),
-                                            Text("条",
+                                            Text("个",
                                               style: TextStyle(
                                                   fontSize: 16,color: Colors.white
                                               ),),
@@ -160,7 +197,7 @@ class _FirstPageState extends State<FirstPage> {
                                         ),
 
                                         SizedBox(height: 5,),
-                                        Text("未读消息",
+                                        Text("营销内容",
                                           style: TextStyle(
                                               fontSize: 16,color: Colors.white
                                           ),),
@@ -173,12 +210,12 @@ class _FirstPageState extends State<FirstPage> {
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
-                                            Text("289",
+                                            Text("${scriptData.returnedNum}",
                                               style: TextStyle(
                                                   fontSize: 30,color: Colors.white
                                               ),),
                                             SizedBox(width: 5,),
-                                            Text("条",
+                                            Text("个",
                                               style: TextStyle(
                                                   fontSize: 16,color: Colors.white
                                               ),),
@@ -186,7 +223,7 @@ class _FirstPageState extends State<FirstPage> {
                                         ),
 
                                         SizedBox(height: 5,),
-                                        Text("未读消息",
+                                        Text("营销课程",
                                           style: TextStyle(
                                               fontSize: 16,color: Colors.white
                                           ),),
@@ -422,9 +459,9 @@ class _FirstPageState extends State<FirstPage> {
                 child: ListView.separated(
                   physics: AlwaysScrollableScrollPhysics(),
                   shrinkWrap: true,
-                  itemCount: 3,
+                  itemCount: infoList.length,
                   itemBuilder: (context, index) =>
-                      _buildItem(),
+                      _buildItem(infoList[index]),
                   separatorBuilder: (BuildContext context, int index) {
                     return Container(
                       color: Color(0xfff3f2f2),
@@ -437,7 +474,7 @@ class _FirstPageState extends State<FirstPage> {
 
     );
   }
-  _buildItem() {
+  _buildItem(InfoListBean bean) {
     return GestureDetector(
       onTap: () {
 
@@ -474,7 +511,7 @@ class _FirstPageState extends State<FirstPage> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            '作品登记工作',
+                            '${bean.title}'??'',
                             style: TextStyle(
                                 fontSize: 18, color: Color(0xFF2D3434)),
                             maxLines: 1,
@@ -483,8 +520,20 @@ class _FirstPageState extends State<FirstPage> {
                           SizedBox(
                             height: 4,
                           ),
+                          // Container(
+                          //   child:  Html(data: '${bean.content}'??'',
+                          //     shrinkToFit: true,
+                          //     defaultTextStyle: TextStyle(
+                          //       color: Color(0xFFBEC2C2),
+                          //       fontSize: 15,
+                          //       height: 17
+                          //     ),
+                          //   ),
+                          //   height: 34,
+                          // ),
+
                           Text(
-                            '7月3日，国家版权局在苏州举办2017年第一期全国作品登记工作培训班',
+                            '${bean.content}'??'',
                             style: TextStyle(
                               color: Color(0xFFBEC2C2),
                               fontSize: 15,
@@ -499,7 +548,7 @@ class _FirstPageState extends State<FirstPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '发布人',
+                                '${bean.authorName}'??'',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Color(0xFF697373),
@@ -512,7 +561,7 @@ class _FirstPageState extends State<FirstPage> {
                                       height: 13,
                                       fit: BoxFit.fill),
                                   SizedBox(width: 5,),
-                                  Text("刚刚", style: TextStyle(
+                                  Text('${Utils.dateAndTimeToString(bean.time,formart: {"y-m":".","m-d":"."})}'??'', style: TextStyle(
                                     fontSize: 13,
                                     color: Color(0xFF697373),
                                   ),)
@@ -532,4 +581,5 @@ class _FirstPageState extends State<FirstPage> {
       ),
     );
   }
+
 }

@@ -1,9 +1,9 @@
 
 class BaseEntity<T>{
-  int customCode;
+//  int customCode;
   int statusCode;
   String msg;
-  T obj;
+  T data;
 
-  BaseEntity(this.customCode,this.statusCode, this.msg, this.obj);
+  BaseEntity(this.statusCode, this.msg, this.data);
 }

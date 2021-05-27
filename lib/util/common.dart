@@ -8,11 +8,10 @@ class Constant {
   static const String searchHistory = 'searchHistory';
   static const String darkMode = 'darkMode';
   static const String user_Id = 'user_Id';
+  static const String role_Id = 'role_Id';
   static const String user_Name = 'user_Name';
-  static const String book_Id = 'book_Id';
   static const String collect_Status = 'collect_Status';
   static const String save_Password = 'save_Password';
-  static const String school_Id = 'schoolId';
 
 
   // //过滤残留html字符

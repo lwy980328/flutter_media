@@ -6,7 +6,9 @@ import 'package:flutter_media/util/storage_manager.dart';
 import 'package:flutter_media/util/common.dart';
 import 'package:flutter_media/net/config.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_media/util/utils.dart';
 import 'package:oktoast/oktoast.dart';
+
 import 'package:flutter/material.dart';
 
 List<Locale> an = [
@@ -17,10 +19,7 @@ List<Locale> ios = [
   const Locale('en', 'US'),
   const Locale('zh', 'CH'),
 ];
-
 List<CameraDescription> cameras;
-
-
 
 void main() async {
   Config.env = Env.IOS_AUDIT;
@@ -29,6 +28,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   cameras = await availableCameras();
   await StorageManager.init();
+  await Utils.init();
   runApp(MyApp());
   //注册微信API
   // await fluwx.registerWxApi(
@@ -99,7 +99,7 @@ class _MyAppState extends State<MyApp> {
             '/login': (BuildContext context) => new LoginPage(),
             // '/playing': (BuildContext context) => new PlayingPage(),
           },
-          title: 'ai营销',
+          title: '智阅媒体云',
           //debugShowCheckedModeBanner: false,
           builder: (context,widget){
             return MediaQuery(

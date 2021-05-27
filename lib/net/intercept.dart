@@ -1,6 +1,5 @@
 
 import 'dart:convert';
-import 'dart:html';
 import 'dart:io';
 import 'package:flustars/flustars.dart';
 import 'package:dio/dio.dart';
@@ -11,7 +10,6 @@ import 'package:flutter_media/util/utils.dart';
 import 'package:flutter_media/util/common.dart';
 import 'package:flutter_media/util/storage_manager.dart';
 import 'package:flutter_media/util/log_utils.dart';
-
 
 class AuthInterceptor extends Interceptor{
   @override
@@ -226,4 +224,5 @@ class AdapterInterceptor extends Interceptor{
     return response;
   }
 }
+
 

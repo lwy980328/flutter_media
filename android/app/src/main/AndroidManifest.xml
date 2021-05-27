@@ -8,6 +8,8 @@
 
     <application
         android:icon="@mipmap/huanke2"
+        android:networkSecurityConfig="@xml/network_security_config"
+
         android:label="ai营销">
         <activity
             android:name=".MainActivity"

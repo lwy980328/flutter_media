@@ -5,8 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_pickers/pickers.dart';
 
 import 'content_info.dart';
+import 'html_bean.dart';
 
 class CompleteInfoPage extends StatefulWidget {
+  htmlbean data;
+  CompleteInfoPage(this.data);
   @override
   _CompleteInfoPageState createState() => _CompleteInfoPageState();
 }
@@ -20,7 +23,7 @@ class _CompleteInfoPageState extends State<CompleteInfoPage> {
   String area = '';
 
   FocusNode focusNode = FocusNode();
-  String inputText1 = '北京市海淀区';
+  String inputText1 = '贵州省黔南布依族苗族自治州长顺县';
 
   FocusNode _focusNode = FocusNode();
   String inputText = '';
@@ -55,7 +58,7 @@ class _CompleteInfoPageState extends State<CompleteInfoPage> {
                   Navigator.push(
                       context,
                       new CupertinoPageRoute<void>(
-                          builder: (ctx) => ContentInfoPage()));
+                          builder: (ctx) => ContentInfoPage(widget.data..productplace = inputText1..character = characterList..name = inputText)));
                 },
                 color: Colors.blue,
                 child: Text('下一步'),

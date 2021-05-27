@@ -2,7 +2,13 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_media/bean/infoList_bean.dart';
+import 'package:flutter_media/bean/user_bean.dart';
+import 'package:flutter_media/net/api.dart';
+import 'package:flutter_media/net/dio_utils.dart';
+import 'package:flutter_media/util/common.dart';
 import 'package:flutter_media/util/image_utils.dart';
+import 'package:flutter_media/util/utils.dart';
 
 class MinePage extends StatefulWidget {
   @override
@@ -12,11 +18,28 @@ class MinePage extends StatefulWidget {
 class _MinePageState extends State<MinePage> {
     List subjects = ['我的收藏','我的课程','我的业绩','意见反馈','更多设置'];
     List images = ['collect.png','course.png','down.png','feedback.png','setting.png'];
-
+    UserBean userInfo = new UserBean();
   @override
   void initState() {
     super.initState();
+    _requestData();
   }
+
+    _requestData() {
+      DioUtils.instance.requestNetwork<UserBean>(
+          Method.get, Api.USER_INFO, queryParameters: {
+
+        'userId': Utils.sharedPreferences.getString(Constant.user_Id),
+      },
+          onSuccess: (data) {
+            setState(() {
+              userInfo = data;
+              print("获取成功");
+            });
+          }, onError: (code, msg) {
+        print("获取失败");
+      });
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -40,10 +63,10 @@ class _MinePageState extends State<MinePage> {
               children: [
                 Container(
                  child: ClipOval(
-                   child: loadAssetImage('huiyi.png',fit: BoxFit.fill,width: 90,height: 90),
+                   child: loadNetworkImage(userInfo.photo,fit: BoxFit.fill,width: 90,height: 90,placeholder: 'logo_login.png')
                  ),
                 ),
-                Text('Wendy 胡敏',
+                Text('${userInfo.userName}',
                     style: TextStyle(fontSize: 18, color: Colors.white)
                 ),
                 Row(
@@ -51,7 +74,7 @@ class _MinePageState extends State<MinePage> {
                  children: [
                    loadAssetImage('icon_head.png',fit: BoxFit.fill,width: 16,height: 16),
                    SizedBox(width: 12,),
-                   Text('营销达人',
+                   Text('${userInfo.userPosition}',
                        style: TextStyle(fontSize: 15, color: Colors.white)
                    ),
                  ],

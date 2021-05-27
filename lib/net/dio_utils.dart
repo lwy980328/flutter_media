@@ -13,7 +13,6 @@ import 'error_handle.dart';
 import 'intercept.dart';
 
 class DioUtils {
-
   static final DioUtils _singleton = DioUtils._internal();
 
   static DioUtils get instance => DioUtils();
@@ -24,104 +23,109 @@ class DioUtils {
 
   static Dio _dio;
 
-  Dio getDio(){
+  Dio getDio() {
     return _dio;
   }
 
-  DioUtils._internal(){
+  DioUtils._internal() {
     var options = BaseOptions(
-      connectTimeout: 60000,
-      receiveTimeout: 60000,
+      connectTimeout: 15000,
+      receiveTimeout: 15000,
       responseType: ResponseType.plain,
-      validateStatus: (status){
+      validateStatus: (status) {
         // 不使用http状态码判断状态，使用AdapterInterceptor来处理（适用于标准REST风格）
         return true;
       },
-//      baseUrl: "http://10.128.246.120:8080/jeecg",
-      //    baseUrl: 'https://www.aireading.club/jeecg',
       baseUrl: Config.apiHost,
-//      baseUrl: 'http://ygyd.aireading.top/jeecg',
-//    baseUrl: "http://10.128.252.164:8080/jeecg",
-//      contentType: ContentType('application', 'x-www-form-urlencoded', charset: 'utf-8'),
     );
     _dio = Dio(options);
+
     /// 统一添加身份验证请求头
     _dio.interceptors.add(AuthInterceptor());
+
     /// 刷新Token
     _dio.interceptors.add(TokenInterceptor());
+
     /// 打印Log
     _dio.interceptors.add(LoggingInterceptor());
+
     /// 适配数据
     _dio.interceptors.add(AdapterInterceptor());
   }
 
   // 数据返回格式统一，统一处理异常
-  Future<BaseEntity<T>> _request<T>(String method, String url, {dynamic data, Map<String, dynamic> queryParameters, CancelToken cancelToken, Options options}) async {
-    var response = await _dio.request(url, data: data, queryParameters: queryParameters, options: _checkOptions(method, options), cancelToken: cancelToken);
-    int _customCode;
-    int _statusCode;
+  Future<BaseEntity<T>> _request<T>(String method, String url,
+      {FormData data,
+        Map<String, dynamic> queryParameters,
+        CancelToken cancelToken,
+        Options options}) async {
+    var response = await _dio.request(url,
+        data: data,
+        queryParameters: queryParameters,
+        options: _checkOptions(method, options),
+        cancelToken: cancelToken);
+//    int _customCode;
+    int _code;
     String _msg;
     T _obj;
 
     try {
       Map<String, dynamic> _map = json.decode(response.data.toString());
-      Map<String,dynamic> dataMap = _map["data"];
-      _customCode = dataMap['customCode'];
-      _statusCode = dataMap["statusCode"];
+      Map<String, dynamic> dataMap = _map["data"];
+//      _customCode = dataMap['customCode'];
+      _code = dataMap["statusCode"];
       _msg = dataMap["msg"];
-      if(dataMap['obj'] == null){
-
-      }
-      if (dataMap.containsKey("obj")){
-        if(dataMap['obj'] == null){
+      if (dataMap.containsKey("data")) {
+        if (dataMap['data'] == null) {
           _obj = null;
-        }else{
-          _obj = EntityFactory.generateOBJ(dataMap["obj"]);
+        } else {
+          _obj = EntityFactory.generateOBJ(dataMap["data"]);
         }
-
       }
-    }catch(e){
+    } catch (e) {
       print(e);
       return parseError();
     }
-    return BaseEntity(_customCode,_statusCode, _msg, _obj);
+    return BaseEntity(_code, _msg, _obj);
   }
 
-  Future<BaseEntity<List<T>>> _requestList<T>(String method, String url, {dynamic data, Map<String, dynamic> queryParameters, CancelToken cancelToken, Options options}) async {
-    var response = await _dio.request(url, data: data, queryParameters: queryParameters, options: _checkOptions(method, options), cancelToken: cancelToken);
+  Future<BaseEntity<List<T>>> _requestList<T>(String method, String url,
+      {FormData data,
+        Map<String, dynamic> queryParameters,
+        CancelToken cancelToken,
+        Options options}) async {
+    var response = await _dio.request(url,
+        data: data,
+        queryParameters: queryParameters,
+        options: _checkOptions(method, options),
+        cancelToken: cancelToken);
     int _customCode;
-    int _statusCode;
+    int _code;
     String _msg;
     List<T> _obj = [];
 
     try {
       Map<String, dynamic> _map = json.decode(response.data.toString());
-      Map<String,dynamic> dataMap = _map["data"];
-      _customCode = dataMap['customCode'];
-      _statusCode = dataMap["statusCode"];
+      Map<String, dynamic> dataMap = _map["data"];
+//      _customCode = dataMap['customCode'];
+      _code = dataMap["statusCode"];
       _msg = dataMap["msg"];
-      if (dataMap.containsKey("obj")){
+      if (dataMap.containsKey("data")) {
         ///  List类型处理，暂不考虑Map
-        if(dataMap["obj"]==null){
-          _obj=[];
-        }
-        else{
-          (dataMap["obj"] as List).forEach((item){
-
-            _obj.add(EntityFactory.generateOBJ<T>(item));
-          });
-        }
-        BaseEntity(_customCode,_statusCode, _msg, _obj);
+        (dataMap["data"] as List).forEach((item) {
+          _obj.add(EntityFactory.generateOBJ<T>(item));
+        });
+        BaseEntity(_code, _msg, _obj);
       }
-    }catch(e){
+    } catch (e) {
       print(e);
       return parseError();
     }
-    return BaseEntity(_customCode,_statusCode, _msg, _obj);
+    return BaseEntity(_code, _msg, _obj);
   }
 
-  BaseEntity parseError(){
-    return BaseEntity(ExceptionHandle.parse_error,ExceptionHandle.parse_error, "数据解析错误", null);
+  BaseEntity parseError() {
+    return BaseEntity(ExceptionHandle.parse_error, "数据解析错误", null);
   }
 
   Options _checkOptions(method, options) {
@@ -132,22 +136,48 @@ class DioUtils {
     return options;
   }
 
-  Future<BaseEntity<T>> request<T>(String method, String url, {dynamic params, Map<String, dynamic> queryParameters, CancelToken cancelToken, Options options}) async {
-    var response = await _request<T>(method, url, data: params, queryParameters: queryParameters, options: options, cancelToken: cancelToken);
+  Future<BaseEntity<T>> request<T>(String method, String url,
+      {FormData params,
+        Map<String, dynamic> queryParameters,
+        CancelToken cancelToken,
+        Options options}) async {
+    var response = await _request<T>(method, url,
+        data: params,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken);
     return response;
   }
 
-  Future<BaseEntity<List<T>>> requestList<T>(String method, String url, {dynamic params, Map<String, dynamic> queryParameters, CancelToken cancelToken, Options options}) async {
-    var response = await _requestList<T>(method, url, data: params, queryParameters: queryParameters, options: options, cancelToken: cancelToken);
+  Future<BaseEntity<List<T>>> requestList<T>(String method, String url,
+      {FormData params,
+        Map<String, dynamic> queryParameters,
+        CancelToken cancelToken,
+        Options options}) async {
+    var response = await _requestList<T>(method, url,
+        data: params,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken);
     return response;
   }
 
   /// 统一处理(onSuccess返回T对象，onSuccessList返回List<T>)
-  requestNetwork<T>(Method method, String url, {Function(T t) onSuccess,Function() onParseError,Function() noExistError,Function() alreadyExistError,
-    Function() mismatchingError,Function() expiredError,Function(List<T> list) onSuccessList, Function(int code, String mag) onError,
-    dynamic params, Map<String, dynamic> queryParameters, CancelToken cancelToken, Options options, bool isList : false}){
+  requestNetwork<T>(Method method, String url,
+      {Function(T t) onSuccess,
+        Function() onParseError,
+        Function(int code, String mag) noExistError,
+        Function() mismatchingError,
+        Function() expiredError,
+        Function(List<T> list) onSuccessList,
+        Function(int code, String mag) onError,
+        FormData params,
+        Map<String, dynamic> queryParameters,
+        CancelToken cancelToken,
+        Options options,
+        bool isList: false}) {
     String m;
-    switch(method){
+    switch (method) {
       case Method.get:
         m = "GET";
         break;
@@ -164,57 +194,52 @@ class DioUtils {
         m = "DELETE";
         break;
     }
-    if(params is Map) {
-      params = FormData.fromMap(params);
-    }
-
-    Stream.fromFuture(isList ? requestList<T>(m, url, params: params, queryParameters: queryParameters, options: options, cancelToken: cancelToken) :
-    request<T>(m, url, params: params, queryParameters: queryParameters, options: options, cancelToken: cancelToken))
+    Stream.fromFuture(isList
+        ? requestList<T>(m, url,
+        params: params,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken)
+        : request<T>(m, url,
+        params: params,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken))
         .asBroadcastStream()
-        .listen((result){
-      if (result.statusCode == 1){
-        if(result.customCode == 0){
-          onParseError();
-        }else if(result.customCode == -1){
-          noExistError();
-        }else if(result.customCode == -2){
-          mismatchingError();
-        }else if(result.customCode == -3){
-          expiredError();
-        }else{
-          isList ?onSuccessList(result.obj) : onSuccess(result.obj);
-        }
-
-      }else if(result.statusCode == -2){
-        alreadyExistError();
-      }else if(result.statusCode == -3){
-        noExistError();
-      }else if(result.statusCode == 104){
+        .listen((result) {
+      if (result.statusCode == 0) {
+        isList ? onSuccessList(result.data) : onSuccess(result.data);
+      } else if (result.statusCode == 102) {
+        noExistError(result.statusCode, result.msg);
+      } else if (result.statusCode == 104) {
 //        eventBus.fire(LoginEvent());
         Toast.show("用户授权信息无效");
-      }else if(result.statusCode == 105){
+      } else if (result.statusCode == 105) {
         Toast.show("用户收取信息已过期");
-      }else if(result.statusCode == 106){
+      } else if (result.statusCode == 106) {
         Toast.show("用户账户被禁用");
-      }else if(result.statusCode == 120 || result.statusCode == 121){
-        print("app需要升级");
-        // eventBus.fire(LoginEvent(AppUpgradeInfo.fromMap(result.obj),result.statusCode));
-      }else if(result.statusCode == -11){
-        // eventBus.fire(LoginEvent('账户登录信息已过期，请重新登录',2));
-      }else{
-        onError == null ? _onError(result.statusCode, result.msg) : onError(result.statusCode, result.msg);
+      } else if (result.statusCode == -2) {
+        Toast.show("账户登录信息已过期，请重新登录");
+        Utils.exit();
+//        eventBus.fire(LoginEvent('账户登录信息已过期，请重新登录'));
+      } else {
+        onError == null
+            ? _onError(result.statusCode, result.msg)
+            : onError(result.statusCode, result.msg);
 //        eventBus.fire(LoginEvent());
       }
-    }, onError: (e){
-      if (e is DioError && CancelToken.isCancel(e)){
+    }, onError: (e) {
+      if (CancelToken.isCancel(e)) {
         print("取消请求接口： $url");
       }
       Error error = ExceptionHandle.handleException(e);
-      onError == null ? _onError(error.code, error.msg) : onError(error.code, error.msg);
+      onError == null
+          ? _onError(error.code, error.msg)
+          : onError(error.code, error.msg);
     });
   }
 
-  _onError(int code, String mag){
+  _onError(int code, String mag) {
     Log.e("接口请求异常： code: $code, mag: $mag");
     Toast.show(mag);
   }

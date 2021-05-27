@@ -163,7 +163,7 @@ class _ManagePageState extends State<ManagePage> with SingleTickerProviderStateM
             Container(
               // height: 126,
               // width: 96,
-              child: loadAssetImage("huiyi.png",
+              child: loadAssetImage("article_data.png",
                   width: 96,
                   height: 96,
                   fit: BoxFit.fill

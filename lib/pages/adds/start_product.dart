@@ -1,13 +1,19 @@
 
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_media/net/dio_utils.dart';
 import 'package:flutterspeechrecognizerifly/flutterspeechrecognizerifly.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:oktoast/oktoast.dart';
 import 'dart:io';
 
 import 'complete_info.dart';
+import 'html_bean.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert' as convert;
 
 class StartProductPage extends StatefulWidget {
   @override
@@ -26,6 +32,7 @@ class _StartProductPageState extends State<StartProductPage> {
 
   //拍照
   File _img;
+  var filepath = '';
 
 
   @override
@@ -70,6 +77,44 @@ class _StartProductPageState extends State<StartProductPage> {
     print(ret);
   }
 
+  getData() async{
+
+    // DioUtils.instance.requestNetwork(Method.post, '/imageClassifyController/classify',
+    //     params: FormData.fromMap({'file':await MultipartFile.fromFile(filepath)}), isList: false, onSuccess: (data) {
+    //       print('反馈意见成功');
+    //       // Toast.show('提交成功');
+    //
+    //     }, onError: (code, msg) {
+    //       print('反馈意见失败');
+    //       // Toast.show('提交失败');
+    //
+    //     });
+    var options = BaseOptions(
+      responseType: ResponseType.plain,
+      method: 'POST',
+      contentType: 'multipart/form-data;boundary=<calculated when request is sent>',
+    );
+    var response = await Dio(options).request('http://39.105.219.200:18080/imageClassifyController/classify',data: FormData.fromMap({'file':await MultipartFile.fromFile(filepath)}));
+
+
+
+    // var url = Uri.parse('http://39.105.219.200:18080/imageClassifyController/classify');
+    // var response = await http.post(url, body: FormData.fromMap({'file':_img}));
+    // print(response.request);
+    // print('Response status: ${response.statusCode}');
+    // print('Response body: ${response.body}');
+    if(response.statusCode == 200) {
+      setState(() {
+        print(response.data);
+        inputText = convert.jsonDecode(response.data)['data'];
+      });
+    }else if(response.statusCode == 500){
+      // getData();
+    }
+
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,7 +150,7 @@ class _StartProductPageState extends State<StartProductPage> {
                   Navigator.push(
                       context,
                       new CupertinoPageRoute<void>(
-                          builder: (ctx) => CompleteInfoPage()));
+                          builder: (ctx) => CompleteInfoPage(new htmlbean(keyword: inputText.replaceAll('。', '')))));
                 },
                 color: Colors.blue,
                 child: Text('下一步'),
@@ -336,11 +381,18 @@ class _StartProductPageState extends State<StartProductPage> {
             iconSize: 80,
             onPressed: () async {
               var image =
-                  await ImagePicker().getImage(source: ImageSource.camera);
+                  await ImagePicker().getImage(source: ImageSource.camera,imageQuality: 30);
               // var image = await ImagePicker.pickImage(source: ImageSource.camera);
               setState(() {
                 if (image != null) {
                   _img = File(image.path);
+                  filepath = image.path;
+                  showToast(
+                    '正在识别中，请稍后',
+                    duration: Duration(milliseconds: 2000),
+                  );
+
+                  getData();
                 } else {
                   print('没有选中图片');
                 }

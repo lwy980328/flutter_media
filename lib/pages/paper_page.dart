@@ -1,8 +1,28 @@
 
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_media/util/image_utils.dart';
+import 'package:flutter_media/widget/content_tabview.dart';
+import 'package:flutter_media/widget/content_tabview2.dart';
+
+class PaperBean {
+  int gradeId;
+  String gradeName;
+
+  PaperBean(this.gradeId, this.gradeName);
+
+  PaperBean.fromJson(Map<String, dynamic> json) {
+    gradeId = json['gradeId'];
+    gradeName = json['gradeName'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['gradeId'] = this.gradeId;
+    data['gradeName'] = this.gradeName;
+    return data;
+  }
+}
 
 class PaperPage extends StatefulWidget {
   @override
@@ -11,7 +31,8 @@ class PaperPage extends StatefulWidget {
 
 class _PaperPageState extends State<PaperPage> with SingleTickerProviderStateMixin{
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  var tabText = ['全部','草稿','待审核','需修改','已发布'];
+  // var tabText<PaperBean> = ['全部','草稿','待审核','需修改','已发布'];
+  List<PaperBean> tabText = [PaperBean(1,'全部'),PaperBean(2,'草稿'),PaperBean(3,'待审核'),PaperBean(4,'需修改'),PaperBean(5,'已发布')];
 
   TabController _tabController;
   List<Widget> tabs = [];
@@ -19,9 +40,14 @@ class _PaperPageState extends State<PaperPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     _tabController = TabController(length: tabText.length, vsync: this);
+    // tabText.add(PaperBean(1,'全部'));
+    // tabText.add(PaperBean(2,'草稿'));
+    // tabText.add(PaperBean(3,'待审核'));
+    // tabText.add(PaperBean(4,'需修改'));
+    // tabText.add(PaperBean(5,'已发布'));
     tabText.forEach((value) {
       tabs.add(Text(
-        value,
+        value.gradeName,
         style: TextStyle(fontSize: 16),
       ));
     });
@@ -78,8 +104,9 @@ class _PaperPageState extends State<PaperPage> with SingleTickerProviderStateMix
           Expanded(
               child: TabBarView(
                   controller: _tabController,
-                  children: tabText.map((value) {
-                    return _buildListView();
+                  children:
+                  tabText.map((value) {
+                    return value.gradeId==1? ContentTabView(conditionId: 0,menuId: value.gradeId,):ContentTabView2(conditionId: 0,menuId: value.gradeId,);
                   }).toList())),
         ],
       ),

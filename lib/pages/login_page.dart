@@ -1,11 +1,12 @@
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_media/MyHomePage.dart';
 import 'package:flutter_media/util/navigator_util.dart';
 import 'package:flutter_media/util/image_utils.dart';
+import 'package:flutter_media/util/toast.dart';
+import 'package:flutter_media/util/utils.dart';
 import 'package:flutter_media/widget/text_field.dart';
+import 'package:flutter_media/util/common.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class LoginPage extends StatefulWidget {
@@ -37,6 +38,13 @@ class _LoginPageState extends State<LoginPage> {
             affinity: TextAffinity.downstream, offset: inputPassword.length))));
   }
 
+  _login(){
+    Utils.sharedPreferences
+        .setString(Constant.user_Id, "92");
+    Utils.sharedPreferences
+        .setString(Constant.role_Id, "1");
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -60,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                height: 50,
              ),
              Center(
-               child: loadAssetImage('huanke.png',
+               child: loadAssetImage('logo.png',
                    height: 68, width: 68, fit: BoxFit.fill),
              ),
              SizedBox(
@@ -92,7 +100,14 @@ class _LoginPageState extends State<LoginPage> {
 
              GestureDetector(
                onTap: () {
-                 NavigatorUtil.pushReplacementNamed(context, MyHomePage());
+                 if(_nameController.text==''){
+                   Toast.show('用户名不能为空');
+                 }else if(_passwordController.text==''){
+                   Toast.show('密码不能为空');
+                 }else {
+                   _login();
+                   NavigatorUtil.pushReplacementNamed(context, MyHomePage());
+                 }
                },
                child: Container(
                  width: MediaQuery.of(context).size.width,
