@@ -147,10 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onTap: (int index) {
               ///这里根据点击的index来显示，非index的page均隐藏
               if(index == 2){
-                Navigator.push(
-                    context,
-                    new CupertinoPageRoute<void>(
-                        builder: (ctx) => StartProductPage()));
+                Navigator.of(context).push(new MaterialPageRoute(builder: (context){return new StartProductPage();}));
               }else{
                 setState(() {
                   _selectIndex = index;

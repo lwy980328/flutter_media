@@ -29,23 +29,16 @@ class MainActivity: FlutterActivity() {
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
+//        super.configureFlutterEngine(flutterEngine)
         GeneratedPluginRegistrant.registerWith(flutterEngine)
         setupMethodChannel()
     }
 
-//    override fun onNewIntent(intent: Intent) {
-//        super.onNewIntent(intent)
-//        getExtra(intent)
-//    }
-//
-//    private  fun  getExtra(intent: Intent){
-//        mAuthorizationCode = intent?.data?.getQueryParameter(Constants.DOUYIN_CODE)
-//    }
+
 
     private fun DouYinshare(uri: ArrayList<String>){
         var clientKey = "awxx5omz6apj2qyh"
-        Log.i("oncreateTest",clientKey)
+
         DouYinOpenApiFactory.init(DouYinOpenConfig(clientKey))
 
         val douYinOpenApi = DouYinOpenApiFactory.create(this)
@@ -54,7 +47,7 @@ class MainActivity: FlutterActivity() {
         for (item in uri){
             mUri.add(item)
         }
-        Log.i("android native muri", mUri.toString())
+
         val videoObject = VideoObject()
         videoObject.mVideoPaths = mUri
         val content = MediaContent()
@@ -70,16 +63,16 @@ class MainActivity: FlutterActivity() {
 //        }
     }
 
-    private  fun  setupMethodChannel(){
-        MethodChannel(flutterEngine?.dartExecutor,Constants.METHOD_CHANNEL_NAME).setMethodCallHandler{
-            call, result -> if (call.method == Constants.DOUYIN_CODE){
-            result.success(test)
-            var urilist = call.argument<ArrayList<String>>("uri")
-            Log.i("android native", urilist.toString())
-            if (urilist != null) {
-                DouYinshare(urilist)
+    private fun setupMethodChannel() {
+        MethodChannel(flutterEngine?.dartExecutor, Constants.METHOD_CHANNEL_NAME).setMethodCallHandler { call, result ->
+            if (call.method == Constants.DOUYIN_CODE) {
+                result.success(test)
+                var urilist = call.argument<ArrayList<String>>("uri")
+                Log.i("android native", urilist.toString())
+                if (urilist != null) {
+                    DouYinshare(urilist)
+                }
             }
-        }
         }
     }
 }

@@ -2,6 +2,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_media/util/navigator_util.dart';
 import 'package:flutter_pickers/pickers.dart';
 
 import 'content_info.dart';
@@ -55,10 +56,13 @@ class _CompleteInfoPageState extends State<CompleteInfoPage> {
                 onPressed: () {
                   _focusNode.unfocus();
                   focusNode.unfocus();
-                  Navigator.push(
-                      context,
-                      new CupertinoPageRoute<void>(
-                          builder: (ctx) => ContentInfoPage(widget.data..productplace = inputText1..character = characterList..name = inputText)));
+                  NavigatorUtil.pushReplacementNamed(context, ContentInfoPage(widget.data..productplace = inputText1..character = characterList..name = inputText));
+
+
+
+
+                  // Navigator.of(context).push(new MaterialPageRoute(builder: (context){return new ContentInfoPage(widget.data..productplace = inputText1..character = characterList..name = inputText);}));
+
                 },
                 color: Colors.blue,
                 child: Text('下一步'),

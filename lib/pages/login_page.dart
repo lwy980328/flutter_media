@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                height: 50,
              ),
              Center(
-               child: loadAssetImage('logo.png',
+               child: loadAssetImage('huanke.png',
                    height: 68, width: 68, fit: BoxFit.fill),
              ),
              SizedBox(

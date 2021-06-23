@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_media/net/dio_utils.dart';
+import 'package:flutter_media/util/navigator_util.dart';
 import 'package:flutterspeechrecognizerifly/flutterspeechrecognizerifly.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
@@ -147,10 +148,12 @@ class _StartProductPageState extends State<StartProductPage> {
                 borderRadius: BorderRadius.circular(40),
                 onPressed: () {
                   _focusNode.unfocus();
-                  Navigator.push(
-                      context,
-                      new CupertinoPageRoute<void>(
-                          builder: (ctx) => CompleteInfoPage(new htmlbean(keyword: inputText.replaceAll('。', '')))));
+
+                  NavigatorUtil.pushReplacementNamed(context, CompleteInfoPage(new htmlbean(keyword: inputText.replaceAll('。', ''))));
+
+
+                  // Navigator.of(context).push(new MaterialPageRoute(builder: (context){return new CompleteInfoPage(new htmlbean(keyword: inputText.replaceAll('。', '')));}));
+
                 },
                 color: Colors.blue,
                 child: Text('下一步'),

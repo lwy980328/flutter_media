@@ -1,6 +1,10 @@
 
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_media/MyHomePage.dart';
+import 'package:flutter_media/pages/adds/CameraPage.dart';
+import 'package:flutter_media/pages/adds/add_page.dart';
+import 'package:flutter_media/pages/adds/content_info.dart';
 import 'package:flutter_media/pages/login_page.dart';
 import 'package:flutter_media/util/storage_manager.dart';
 import 'package:flutter_media/util/common.dart';
@@ -97,9 +101,12 @@ class _MyAppState extends State<MyApp> {
             // '/splash': (BuildContext context) => new SplashPage(),
             // '/firstin': (BuildContext context) => new FirstInPage(),
             '/login': (BuildContext context) => new LoginPage(),
+            '/camera': (BuildContext context) => new CameraPage(),
+            '/home':(BuildContext context) => new MyHomePage(),
+            '/add':(BuildContext context) => new AddPage(),
             // '/playing': (BuildContext context) => new PlayingPage(),
           },
-          title: '智阅媒体云',
+          title: 'AI营销',
           //debugShowCheckedModeBanner: false,
           builder: (context,widget){
             return MediaQuery(

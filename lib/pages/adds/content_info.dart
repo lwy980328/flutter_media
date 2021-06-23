@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert' as convert;
 import 'dart:io';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 
 // import 'package:farmers_lead_app/CameraMain.dart';
@@ -13,7 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+// import 'package:webview_flutter/webview_flutter.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import 'CameraPage.dart';
@@ -36,7 +37,7 @@ class _ContentInfoPageState extends State<ContentInfoPage>
   TabController _tabController;
   VideoPlayerController _videoPlayerController;
   String content = '';
-  WebViewController webViewController;
+  // WebViewController webViewController;
 
   // Completer<WebViewController> _ccontro = Completer<WebViewController>();
   String get = '';
@@ -68,7 +69,7 @@ class _ContentInfoPageState extends State<ContentInfoPage>
     _videoPlayerController.initialize().then((_) => setState(() {}));
     // _videoPlayerController.play();
 
-    if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
+    // if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
 
     // readHtml();
     getData();
@@ -190,6 +191,12 @@ class _ContentInfoPageState extends State<ContentInfoPage>
     }
   }
 
+  tts() async{
+    FlutterTts flutterTts = FlutterTts();
+    var result = await flutterTts.speak("说一段中文");
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -226,9 +233,13 @@ class _ContentInfoPageState extends State<ContentInfoPage>
                 physics: NeverScrollableScrollPhysics(),
                 controller: _tabController,
                 children: [
-                  // sellGraphic(),
-                  // Container(),
-                  html(),
+                  Container(
+                    // child: IconButton(
+                    //   onPressed: tts,
+                    //   icon: Icon(Icons.settings_voice_rounded),
+                    // ),
+                  ),
+                  // html(),
                   marketGraphic(),
                   // sellVideo(),
                   Container(),
@@ -247,10 +258,11 @@ class _ContentInfoPageState extends State<ContentInfoPage>
                   child: CupertinoButton(
                     borderRadius: BorderRadius.circular(40),
                     onPressed: () {
-                      Navigator.push(
-                          context,
-                          new CupertinoPageRoute<void>(
-                              builder: (ctx) => CameraPage()));
+                      // Navigator.of(context).pushNamedAndRemoveUntil('/camera', ModalRoute.withName('/homepage'));
+                      // Navigator.pushNamedAndRemoveUntil(context, "/camera",ModalRoute.withName("/camera"));
+                      // Navigator.popUntil(context, ModalRoute.withName('/home'));
+                      Navigator.of(context).push(new MaterialPageRoute(builder: (context){return new CameraPage();}));
+
                     },
                     color: Colors.blue,
                     child: Text('拍这个'),
