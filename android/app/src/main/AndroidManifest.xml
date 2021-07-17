@@ -7,10 +7,10 @@
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
     <application
-        android:icon="@mipmap/huanke2"
+        android:icon="@mipmap/huanke"
         android:networkSecurityConfig="@xml/network_security_config"
 
-        android:label="ai营销">
+        android:label="爱营销">
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"

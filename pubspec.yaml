@@ -49,17 +49,18 @@ dependencies:
   flutterspeechrecognizerifly:
     git: https://gitee.com/haikerenwu/speech_text_ifly.git
   video_player: 2.1.1
+  audioplayers:
   flutter_html: 2.0.0
 #  webview_flutter: 2.0.4
   path_provider: 2.0.1
-  file_picker: 3.0.1
+#  file_picker: 3.0.1
   wechat_assets_picker: 5.5.2
   camera: ^0.8.1
   uuid: 3.0.4
   flutter_pickers: ^2.1.0
-
   flutter_ffmpeg: 0.3.1
-  flutter_tts: 3.1.0
+#  date_format:
+#  flutter_tts: 3.1.0
   # add this line to your dependencies
 #  fluttertoast: ^8.0.7
 
@@ -86,6 +87,8 @@ flutter:
     - assets/video/
     - assets/images/2.0x/
     - assets/images/3.0x/
+    - assets/images/eggCover/
+    - assets/audio/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

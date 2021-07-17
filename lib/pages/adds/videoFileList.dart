@@ -38,7 +38,7 @@ class videoFileList{
   }
 
   int lengthIs(){
-    return allVideo.length;
+    return allVideo.length??0;
   }
 
   printList(){

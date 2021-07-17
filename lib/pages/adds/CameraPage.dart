@@ -1,5 +1,7 @@
-import 'package:camera/camera.dart';
+import 'dart:async';
 
+import 'package:camera/camera.dart';
+import 'package:dio/dio.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +9,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:flutter_html/shims/dart_ui.dart';
 import 'package:flutter_media/pages/adds/videoFileList.dart';
+import 'package:flutter_media/pages/adds/video_0_bean.dart';
+import 'package:flutter_media/pages/tts/ttswebsocket.dart';
 import 'package:flutter_media/util/toast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -18,10 +22,12 @@ import 'package:video_player/video_player.dart';
 import 'VideoPage.dart';
 import '../../main.dart';
 import 'content_info.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'video_bean.dart';
+// import 'package:flutter_tts/flutter_tts.dart';
 
 class CameraPage extends StatelessWidget {
-  const CameraPage({Key key}) : super(key: key);
+  final video0bean video0;
+  const CameraPage({Key key,@required this.video0}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -29,19 +35,20 @@ class CameraPage extends StatelessWidget {
       backgroundColor: Colors.black,
       body: CameraMain(
         rpx: MediaQuery.of(context).size.width / 750,
+        video0: video0,
       ),
       bottomNavigationBar: BottomAppBar(),
     );
   }
 }
 
-typedef _CallBack = void Function(XFile file);
-
+typedef _CallBack = void Function(
+    XFile file, CameraController cameraController);
 
 class CameraMain extends StatefulWidget {
   final double rpx;
-
-  CameraMain({Key key, @required this.rpx}) : super(key: key);
+  final video0bean video0;
+  CameraMain({Key key, @required this.rpx,this.video0}) : super(key: key);
 
   @override
   _CameraMainState createState() => _CameraMainState();
@@ -61,19 +68,58 @@ class _CameraMainState extends State<CameraMain> {
   VideoPlayerController videoController;
   List<String> uriList = List();
   videoFileList videoList;
-  FlutterTts flutterTts = FlutterTts();
+  // List<videoBean> videoBeanList;
+
+  // FlutterTts flutterTts = FlutterTts();
+
+  // List<CameraDescription> i ;
+  bool offstage = true;
+  int position = 1;
+  videoBean cur;
+  bool makesured = true;
 
 
-  String testStr = '我是一个大好人';
 
-  // CameraProvider cameraProvider ;
+  int curCamera = 0;
 
-  int curCamera = 1;
+  getData() async {
+    print('------------------------------');
+    var options = BaseOptions(
+      // responseType: ResponseType.plain,
+        baseUrl: 'http://39.105.219.200:8089',
+        method: 'GET',
+        queryParameters: {'templateVideoId':widget.video0.id,'position':position}
+      // contentType: 'multipart/form-data;boundary=<calculated when request is sent>',
+    );
+
+    var response = await Dio(options).request('/template/video/detail/getByTemplateIdAndPos');
+    print(response.realUri);
+
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.data}');
+    if (response.statusCode == 200) {
+      setState(() {
+        print(response.data['data']['id']);
+        cur = new videoBean(response.data['data']['id'], response.data['data']['position'], response.data['data']['templateVideoId'], response.data['data']['boardUrl'],response.data['data']['tips'],response.data['data']['words']);
+        ttsWebsocket().initWebSocket(response.data['data']['tips']);
+        // video0 = new video0bean(id??0, videoUrl??'', keywords??'', filter??0);
+        print('------------------------------');
+
+
+      });
+    }
+  }
 
   getCameras() async {
-    _cameracontroller = CameraController(cameras[curCamera], ResolutionPreset.high,
+    // CameraDescription i1 = CameraDescription(name: '1',lensDirection:CameraLensDirection.front,sensorOrientation: 180);
+    // CameraDescription i0 = CameraDescription(name: '0',lensDirection:CameraLensDirection.back,sensorOrientation: 90);
+    // i = [i0,i1];
+    _cameracontroller = CameraController(
+        cameras[curCamera], ResolutionPreset.high,
         enableAudio: true);
     _initializeControllerFuture = _cameracontroller.initialize();
+
     // _controller.initialize().then((_) {
     //   if (!mounted) {
     //     return;
@@ -87,9 +133,35 @@ class _CameraMainState extends State<CameraMain> {
     // });
   }
 
+  vflip() async {
+    if (videoList.lengthIs() == 2) {
+      Directory directory = await getExternalStorageDirectory();
+      String path = directory.path;
+      String command = " -i $path/2.mp4 -vf vflip -y $path/2l.mp4";
+      final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
+      _flutterFFmpeg.execute(command).then((rc) {
+        print("------------视频已翻转--------------");
+        Toast.show("第${videoList.lengthIs()}幕已翻转");
+      });
+    }
+  }
 
-
-
+  mixMusic(String audiopath, String videopath, String videoname,
+      String silence) async {
+    // File f = File('$videoname');
+    // if(f.existsSync()){
+    //   f.deleteSync();
+    // }
+    final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
+    String command0 = ' -y -i $videopath -vcodec copy -an $silence';
+    await _flutterFFmpeg.execute(command0);
+    String command =
+        '  -y -i $silence  -t 4 -i $audiopath -vcodec copy  $videopath';
+    print('混入音乐的命令是：' + command);
+    _flutterFFmpeg
+        .execute(command)
+        .then((value) => Toast.show("第${videoList.lengthIs()}幕已加入音乐"));
+  }
 
   saveFile() async {
     // Directory directory = await getExternalStorageDirectory();
@@ -107,36 +179,44 @@ class _CameraMainState extends State<CameraMain> {
     Directory directory = await getExternalStorageDirectory();
     String path = directory.path;
     File f = File('$path/output.mp4');
-    if(f.existsSync()){
+    if (f.existsSync()) {
       f.deleteSync();
     }
     videoList.printList();
-
     final file = new File('$path/filelist.txt');
     file.writeAsString('');
     IOSink slink = file.openWrite(mode: FileMode.append);
-    for(int i=1;i<=videoList.length;i++){
+    for (int i = 1; i <= videoList.length; i++) {
       slink.write('file $i.mp4\n');
     }
     slink.close();
-    String command = " -f concat -i $path/filelist.txt  -c copy $path/output.mp4";
+    String command =
+        "-f concat -i $path/filelist.txt  -c copy $path/output.mp4";
+    Toast.show('请稍等一段时间，正在合成视频');
+
     final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
-    _flutterFFmpeg
-        .execute(command)
-        .then((rc) {
+    await _flutterFFmpeg.execute(command).then((rc) {
       print("FFmpeg process exited with rc $rc");
-      uploadFile = new File("$path/output.mp4");
+    });
+    Timer(Duration(milliseconds: 800), () {});
+    command =
+        "-y -i $path/output.mp4 -t 32 -i $path/music.m4a -vcodec copy $path/output1.mp4";
+    await _flutterFFmpeg.execute(command).then((value) {
+      print("FFmpeg process exited with rc $value");
+    });
+    Timer(Duration(milliseconds: 800), () {
+      uploadFile = new File("$path/output1.mp4");
       upload();
-    } );
+    });
 
     //合成视频
   }
 
-  saveSonFile() async{
+  saveSonFile() async {
     Directory directory = await getExternalStorageDirectory();
     String path = directory.path;
     print(path);
-    String fileName = p.join(path, "${videoList.lengthIs()+1}.mp4");
+    String fileName = p.join(path, "${videoList.lengthIs() + 1}.mp4");
     var contents = await videoFile.readAsBytes();
     File file = new File(fileName);
     file.writeAsBytes(contents).then((value) {
@@ -144,6 +224,8 @@ class _CameraMainState extends State<CameraMain> {
         videoList.addToList(file);
       });
       Toast.show("第${videoList.lengthIs()}幕已保存");
+      position++;
+      getData();
       file = null;
     });
   }
@@ -158,161 +240,76 @@ class _CameraMainState extends State<CameraMain> {
     await myChannel.invokeMethod('douyin', {'uri': uriList});
   }
 
-  void onVideoRecordButtonPressed() {
-    startVideoRecording().then((_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  Future<void> startVideoRecording() async {
-    final CameraController cameraController = _cameracontroller;
-    print("视频录制开始--------------------------------------------------");
-
-    if (cameraController == null || !cameraController.value.isInitialized) {
-      print('Error: select a camera first.');
-      return;
-    }
-
-    if (cameraController.value.isRecordingVideo) {
-      // A recording is already started, do nothing.
-      return;
-    }
-
-    try {
-      await cameraController.startVideoRecording();
-    } on CameraException catch (e) {
-      print(e);
-      return;
-    }
-  }
-
-  void onStopButtonPressed() {
-    stopVideoRecording().then((file) {
-      if (mounted) setState(() {});
-      if (file != null) {
-        print('Video recorded to ${file.path}');
-        videoFile = file;
-        // _startVideoPlayer();
-      }
-    });
-  }
-
-  Future<XFile> stopVideoRecording() async {
-    final CameraController cameraController = _cameracontroller;
-    print("视频录制结束--------------------------------------------------");
-
-    if (cameraController == null || !cameraController.value.isRecordingVideo) {
-      return null;
-    }
-
-    try {
-      return cameraController.stopVideoRecording();
-    } on CameraException catch (e) {
-      print(e);
-      return null;
-    }
-  }
-
-  void onPauseButtonPressed() {
-    pauseVideoRecording().then((_) {
-      if (mounted) setState(() {});
-      print('Video recording paused');
-    });
-  }
-
-  Future<void> pauseVideoRecording() async {
-    final CameraController cameraController = _cameracontroller;
-
-    if (cameraController == null || !cameraController.value.isRecordingVideo) {
-      return null;
-    }
-
-    try {
-      await cameraController.pauseVideoRecording();
-    } on CameraException catch (e) {
-      print(e);
-      rethrow;
-    }
-  }
-
   changeCamera() {
+    Toast.show('暂时不支持前后摄像头视频合成，合成的视频可能会出问题哦');
     if (curCamera == 0) {
       curCamera = 1;
     } else {
       curCamera = 0;
     }
-    _cameracontroller = CameraController(cameras[curCamera], ResolutionPreset.max);
+
+    _cameracontroller = CameraController(
+        cameras[curCamera], ResolutionPreset.high,
+        enableAudio: true);
     _cameracontroller.initialize().then((_) {
       setState(() {});
     });
-  }
-
-  void showAlertDialog() {
-    showDialog<Null>(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return new AlertDialog(
-            title: new Text('剧本'),
-            //可滑动
-            content: new SingleChildScrollView(
-              child: new ListBody(
-                children: <Widget>[
-                  new Text('内容 1'),
-
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              Expanded(
-                flex: 1,
-                child: new FlatButton(
-                  child: new Text('朗读'),
-                  onPressed: () {
-                    // Navigator.of(context).pop();
-                  },
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: new FlatButton(
-                  child: new Text('取消'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              )
-            ],
-          );
-        });
   }
 
   @override
   void initState() {
     super.initState();
     getCameras();
-    videoList = new videoFileList(8);
+    videoList = new videoFileList(widget.video0.filter);
     rpx = widget.rpx;
     toTop = 100 * rpx;
     outBox = 170 * rpx;
     innerBox = 130 * rpx;
+
+    getData();
+
+    // videoBean v1 = new videoBean(
+    //     1, 'assets/images/eggCover/1.png', '请使用后置摄像头拍摄，景色处于虚线框位置，镜头转动拍摄四周景色。');
+    // videoBean v2 = new videoBean(2, 'assets/images/eggCover/2.png',
+    //     '女人戴草帽，提⽵篓，⾯带微笑，喜⽓洋洋地在田野上从镜头左边走到右边，直到走出镜头。');
+    // videoBean v3 = new videoBean(3, 'assets/images/eggCover/3.png',
+    //     '镜头固定，扛着锄头的男人和戴草帽的女人一起走到屏幕中间，然后开始说台词。');
+    // videoBean v4 = new videoBean(4, 'assets/images/eggCover/4.png',
+    //     '请使用后置摄像头拍摄，动物和景色处于虚线框位置，镜头转动拍摄所有的鸡。',
+    //     audio: 'chicktalk.wav');
+    // videoBean v5 = new videoBean(5, 'assets/images/eggCover/5.png',
+    //     '请使用后置摄像头拍摄，人物和景色处于虚线框位置，镜头固定。女人在鸡群里寻找否有鸡蛋。',
+    //     audio: 'womanchick.wav');
+    // videoBean v6 = new videoBean(6, 'assets/images/eggCover/6.png',
+    //     '请使用后置摄像头拍摄，人物和景色处于虚线框位置，镜头固定。女人从鸡窝里面捡起三个沾着泥⼟的鸡蛋。');
+    // videoBean v7 = new videoBean(7, 'assets/images/eggCover/7.png',
+    //     '请使用后置摄像头拍摄，人物处于虚线框位置，镜头固定。农家妇⼥淳朴的笑容');
+    // videoBean v8 = new videoBean(8, 'assets/images/eggCover/8.png',
+    //     '请使用后置摄像头拍摄，人物处于虚线框位置，镜头固定。农家妇⼥用⼿将鸡蛋打破，鸡蛋流到碗里。');
+    // videoBean v9 = new videoBean(9, '', '');
+    //
+    // // ttsWebsocket().initWebSocket(v1.script);
+    //
+    // setState(() {
+    //   videoBeanList = [v1, v2, v3, v4, v5, v6, v7, v8, v9];
+    // });
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // final CameraController cameraController = _cameracontroller;
-    //
-    // // App state changed before we got the chance to initialize.
-    // if (cameraController == null || !cameraController.value.isInitialized) {
-    //   return;
-    // }
-    //
-    // if (state == AppLifecycleState.inactive) {
-    //   cameraController.dispose();
-    // } else if (state == AppLifecycleState.resumed) {
-    //   onNewCameraSelected(cameraController.description);
-    // }
-  }
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   final CameraController cameraController = _cameracontroller;
+  //
+  //   // App state changed before we got the chance to initialize.
+  //   if (cameraController == null || !cameraController.value.isInitialized) {
+  //     return;
+  //   }
+  //
+  //   if (state == AppLifecycleState.inactive) {
+  //     cameraController.dispose();
+  //   } else if (state == AppLifecycleState.resumed) {
+  //     onNewCameraSelected(cameraController.description);
+  //   }
+  // }
 
   void onNewCameraSelected(CameraDescription cameraDescription) async {
     if (_cameracontroller != null) {
@@ -322,7 +319,7 @@ class _CameraMainState extends State<CameraMain> {
       cameraDescription,
       ResolutionPreset.high,
       enableAudio: true,
-      imageFormatGroup: ImageFormatGroup.jpeg,
+      // imageFormatGroup: ImageFormatGroup.jpeg,
     );
     _cameracontroller = cameraController;
 
@@ -330,8 +327,7 @@ class _CameraMainState extends State<CameraMain> {
     cameraController.addListener(() {
       if (mounted) setState(() {});
       if (cameraController.value.hasError) {
-        print(
-            'Camera error ${cameraController.value.errorDescription}');
+        print('Camera error ${cameraController.value.errorDescription}');
       }
     });
 
@@ -363,7 +359,6 @@ class _CameraMainState extends State<CameraMain> {
 
   @override
   void dispose() {
-
     _cameracontroller?.dispose();
     videoController?.dispose();
 
@@ -372,22 +367,8 @@ class _CameraMainState extends State<CameraMain> {
 
   @override
   Widget build(BuildContext context) {
-    // provider = Provider.of<CameraProvider>(context);
-    // _controller=provider.cameraController;
-    // if (provider == null || _controller == null) {
-    //   return Container(
-    //     child: Center(child: CircularProgressIndicator()),
-    //   );
-    // }
-    // bool ifMakeVideo = provider.ifMakeVideo;
-    // if (_controller == null || _controller?.value == null) {
-    //   return Container(
-    //     child: Center(child: CircularProgressIndicator()),
-    //   );
-    // }
     final size = MediaQuery.of(context).size;
     final deviceRatio = size.width / size.height;
-    // final deviceRatio = size.height / size.width;
 
     return Stack(
       children: [
@@ -396,23 +377,10 @@ class _CameraMainState extends State<CameraMain> {
             future: _initializeControllerFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                final xScale = _cameracontroller.value.aspectRatio / deviceRatio;
+                final xScale =
+                    _cameracontroller.value.aspectRatio / deviceRatio;
                 print(xScale);
                 final yScale = 1.0;
-                // return Container(
-                //   // child: CameraPreview(_controller),
-                //   child: Transform.scale(
-                //     scale: _controller.value.aspectRatio/deviceRatio,
-                //     child: Center(
-                //       child: AspectRatio(
-                //         aspectRatio: _controller.value.aspectRatio,
-                //         child: CameraPreview(_controller),
-                //       ),
-                //     ),
-                //   ),
-                //   // width: MediaQuery.of(context).size.width,
-                //   // height: MediaQuery.of(context).size.height,
-                // );
                 return Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
@@ -432,7 +400,8 @@ class _CameraMainState extends State<CameraMain> {
         Container(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
-          child: Image.asset('assets/images/mengban.png'),
+          child:
+              Image.network(cur.boardUrl?? ''),
         ),
         Positioned(
           //顶部关闭按钮
@@ -442,39 +411,128 @@ class _CameraMainState extends State<CameraMain> {
             icon: Icon(
               Icons.close,
               color: Colors.white60,
-              size: 60 * rpx,
+              size: 40,
             ),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
         ),
-        // Positioned(
-        //   //选择音乐
-        //   top: toTop,
-        //   left: 250 * rpx,
-        //   child: Container(
-        //     width: 250 * rpx,
-        //     child: FlatButton(
-        //       onPressed: () {},
-        //       child: Row(
-        //         children: <Widget>[
-        //           Icon(
-        //             Icons.music_note,
-        //             color: Colors.white,
-        //           ),
-        //           SizedBox(
-        //             width: 10 * rpx,
-        //           ),
-        //           Text(
-        //             "选择音乐",
-        //             style: TextStyle(color: Colors.white),
-        //           ),
-        //         ],
-        //       ),
-        //     ),
-        //   ),
-        // ),
+        Positioned(
+          right: 30 * rpx,
+          top: 80 * rpx + 80,
+          child: IconButton(
+              icon: Icon(Icons.wb_incandescent),
+              iconSize: 40,
+              color: Colors.white60,
+              onPressed: () {
+                setState(() {
+                  offstage = !offstage;
+                });
+              }),
+        ),
+        Positioned(
+            right: (MediaQuery.of(context).size.width - 280) / 2,
+            top: 170,
+            child: Offstage(
+              offstage: offstage,
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    // border:Border.all(color: Colors.blue, width: 1),
+                    borderRadius: BorderRadius.all(Radius.circular(30)),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.white70,
+                          // offset: Offset(-10,-10),
+                          blurRadius: 2,
+                          spreadRadius: 2),
+                      BoxShadow(
+                          color: Colors.white30,
+                          // offset: Offset(-10,-10),
+                          blurRadius: 1,
+                          spreadRadius: 1),
+                    ]),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Container(
+                      padding: EdgeInsets.all(5),
+                      color: Colors.white,
+                      //,strutStyle: StrutStyle(fontSize:18,height:1.2,leading: 0.5),
+                      child: Text("剧本",
+                          style: TextStyle(fontSize: 22.0, color: Colors.blue)),
+                    ),
+                    Container(
+                      height: 2,
+                      width: 50,
+                      color: Colors.blue,
+                    ),
+                    Container(
+                      height: 178,
+                      padding: EdgeInsets.only(
+                          top: 16, right: 16, left: 16, bottom: 16),
+                      color: Colors.white,
+                      child: Text(
+                        cur.words ?? '',
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                    ),
+                    Container(
+                      // alignment: Alignment.bottomCenter,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(30)),
+                      ),
+                      // color: Colors.white,
+                      child: Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: GestureDetector(
+                                onTap: () {
+                                  ttsWebsocket().initWebSocket(
+                                      cur.words);
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.only(top: 4, bottom: 6),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    "朗读",
+                                    style: TextStyle(
+                                        fontSize: 20.0, color: Colors.blue),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                            flex: 1,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  offstage = !offstage;
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.only(top: 4, bottom: 6),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  "取消",
+                                  style: TextStyle(fontSize: 20.0),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            )),
         Positioned(
           //拍照按钮
           bottom: 140 * rpx,
@@ -485,17 +543,17 @@ class _CameraMainState extends State<CameraMain> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Expanded(
-                        flex:2,
-                        child: _thumbnailWidget(),
+                      flex: 2,
+                      child: _thumbnailWidget(),
                     ),
                     Expanded(
-                      flex:2,
+                      flex: 2,
                       child: AnimVideoButton(
                         rpx: rpx,
                         outWidth: outBox,
                         innerWidth: innerBox - 30 * rpx,
                         cameraController: _cameracontroller,
-                        callback: (f) {
+                        callback: (f, c) {
                           setState(() {
                             videoFile = f;
                             print(f.path);
@@ -503,32 +561,39 @@ class _CameraMainState extends State<CameraMain> {
                           });
                         },
                       ),
-                    ), Expanded(
+                    ),
+                    Expanded(
                       flex: 1,
                       child: IconButton(
                         iconSize: 32,
                         icon: const Icon(Icons.close),
                         color: Colors.blue,
                         onPressed: () {
-                          videoList.removeLastList();
-                          Toast.show("第${videoList.lengthIs()}幕已移除，请重新拍摄");
+                          if(position == videoList.lengthIs()+1){
+                            Toast.show("第${videoList.lengthIs()}幕已移除，请重新拍摄");
+                            videoList.removeLastList();
+                            position--;
+                            getData();
+                          }
+
                         },
                       ),
                     ),
                     Expanded(
                       flex: 1,
+                      //
                       child: videoList.fullList()
                           ? IconButton(
-                              iconSize: 40,
-                              icon: const Icon(Icons.done),
+                              iconSize: 50,
+                              icon: const Icon(Icons.arrow_forward_outlined),
                               color: Colors.blue,
-                              onPressed: (){
+                              onPressed: () {
                                 saveFile();
                               },
                             )
                           : IconButton(
-                              iconSize: 50,
-                              icon: const Icon(Icons.navigate_next_outlined),
+                              iconSize: 40,
+                              icon: const Icon(Icons.done),
                               color: Colors.blue,
                               onPressed: () {
                                 saveSonFile();
@@ -537,12 +602,6 @@ class _CameraMainState extends State<CameraMain> {
                     ),
                   ])),
         ),
-        // Positioned(
-        //   bottom: 40 * rpx,
-        //   child: ScrollBottomBar(
-        //     rpx: rpx,
-        //   ),
-        // ),
         Positioned(
           right: 30 * rpx,
           top: 80 * rpx + 20,
@@ -554,26 +613,15 @@ class _CameraMainState extends State<CameraMain> {
                 changeCamera();
               }),
         ),
-        Positioned(
-          right: 30 * rpx,
-          top: 80 * rpx + 80,
-          child: IconButton(
-              icon: Icon(Icons.wb_incandescent),
-              iconSize: 40,
-              color: Colors.white60,
-              onPressed: () {
-                showAlertDialog();
-              }),
-        )
       ],
     );
   }
 
   Future<void> _startVideoPlayer() async {
-
     if (videoFile == null) {
       return;
     }
+    videoController = null;
 
     final VideoPlayerController vController =
         VideoPlayerController.file(File(videoFile.path));
@@ -588,7 +636,6 @@ class _CameraMainState extends State<CameraMain> {
     // await vController.setLooping(true);
     await vController.initialize();
     // await videoController.pause();
-    videoController = null;
     // videoController = null;
     if (mounted) {
       setState(() {
@@ -812,7 +859,7 @@ class _AnimVideoButtonState extends State<AnimVideoButton>
   // CameraProvider provider;
   CameraController cameraController;
   double curBorder;
-  XFile videoFile;
+
   String fileName;
 
   // _CallBack _callBack;
@@ -864,14 +911,11 @@ class _AnimVideoButtonState extends State<AnimVideoButton>
     stopVideoRecording().then((file) {
       if (mounted) setState(() {});
       if (file != null) {
-        print('Video recorded to ${file.path}');
-        videoFile = file;
         setState(() {
           if (widget.callback != null) {
-            widget.callback(file);
+            widget.callback(file, null);
           }
         });
-
         // _startVideoPlayer();
       }
     });
@@ -888,7 +932,7 @@ class _AnimVideoButtonState extends State<AnimVideoButton>
     try {
       return cameraController.stopVideoRecording();
     } on CameraException catch (e) {
-      print(e);
+      print('出现了问题是' + e.toString());
       return null;
     }
   }

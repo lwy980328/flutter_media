@@ -1,13 +1,16 @@
 
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_media/pages/adds/video_0_bean.dart';
+import 'package:flutter_media/pages/tts/ttswebsocket.dart';
 import 'package:flutter_media/util/navigator_util.dart';
 import 'package:flutter_pickers/pickers.dart';
-
+import 'package:http/http.dart' as http;
 import 'content_info.dart';
 import 'html_bean.dart';
-
+import 'dart:convert' as convert;
 class CompleteInfoPage extends StatefulWidget {
   htmlbean data;
   CompleteInfoPage(this.data);
@@ -28,6 +31,56 @@ class _CompleteInfoPageState extends State<CompleteInfoPage> {
 
   FocusNode _focusNode = FocusNode();
   String inputText = '';
+
+  video0bean video0;
+  @override
+  void initState() {
+    // TODO: implement initState
+
+    getVideoData();
+    super.initState();
+
+  }
+
+  getVideoData() async{
+
+    print('------------------------------');
+    var options = BaseOptions(
+      // responseType: ResponseType.plain,
+      baseUrl: 'http://39.105.219.200:8089',
+      method: 'GET',
+      queryParameters: {'keywords':widget.data.keyword==''?'鸡蛋':widget.data.keyword}
+      // contentType: 'multipart/form-data;boundary=<calculated when request is sent>',
+    );
+
+    var response = await Dio(options).request('/template/video/getByKeywordsRandom');
+    print(response.realUri);
+
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.data}');
+    if (response.statusCode == 200) {
+      setState(() {
+        print(response.data['data']['id']);
+        int id = response.data['data']['id'];
+        String keywords = response.data['data']['keywords'];
+        String videoUrl = response.data['data']['videoUrl'];
+        int filter = response.data['data']['filter'];
+        video0 = new video0bean(id??0, videoUrl??'', keywords??'', filter??0);
+        print('------------------------------');
+
+        // videourl = videoUrl;
+
+      });
+    }
+  }
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    focusNode.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,13 +109,8 @@ class _CompleteInfoPageState extends State<CompleteInfoPage> {
                 onPressed: () {
                   _focusNode.unfocus();
                   focusNode.unfocus();
-                  NavigatorUtil.pushReplacementNamed(context, ContentInfoPage(widget.data..productplace = inputText1..character = characterList..name = inputText));
-
-
-
-
+                  NavigatorUtil.pushReplacementNamed(context, ContentInfoPage(widget.data..productplace = inputText1..character = characterList..name = inputText,video0));
                   // Navigator.of(context).push(new MaterialPageRoute(builder: (context){return new ContentInfoPage(widget.data..productplace = inputText1..character = characterList..name = inputText);}));
-
                 },
                 color: Colors.blue,
                 child: Text('下一步'),

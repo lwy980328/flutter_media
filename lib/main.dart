@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_media/MyHomePage.dart';
@@ -12,8 +14,11 @@ import 'package:flutter_media/net/config.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_media/util/utils.dart';
 import 'package:oktoast/oktoast.dart';
+import 'package:path/path.dart' as p;
+
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 List<Locale> an = [
   const Locale('zh', 'CH'),
@@ -25,6 +30,27 @@ List<Locale> ios = [
 ];
 List<CameraDescription> cameras;
 
+saveFile() async {
+  Directory directory = await getExternalStorageDirectory();
+  String path = directory.path;
+  List<String> name = ['chicktalk.wav','womanchick.wav','music.m4a'];
+
+  for(var i in name){
+    String fileName = p.join(path, i);
+    // File f1 = File.fromUri('assets/audio/$i');
+    var bytes = await rootBundle.load('assets/audio/$i');
+    // var contents = await f1.readAsBytes();
+    File file = new File(fileName);
+    file.writeAsBytes(bytes.buffer.asUint8List(bytes.offsetInBytes,bytes.lengthInBytes));
+  }
+
+
+
+
+
+
+}
+
 void main() async {
   Config.env = Env.IOS_AUDIT;
 
@@ -33,11 +59,12 @@ void main() async {
   cameras = await availableCameras();
   await StorageManager.init();
   await Utils.init();
+  saveFile();
+
   runApp(MyApp());
   //注册微信API
   // await fluwx.registerWxApi(
-  //     appId: "wx888cb9d3ec086984",
-  //     doOnAndroid: true,
+  //     appId: "wx888cb9d3ec086984/     doOnAndroid: true,
   //     doOnIOS: true,
   //     universalLink: 'https://www.aireading.club/phms3app/');
 }

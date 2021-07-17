@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_media/net/dio_utils.dart';
+import 'package:flutter_media/pages/tts/ttswebsocket.dart';
 import 'package:flutter_media/util/navigator_util.dart';
 import 'package:flutterspeechrecognizerifly/flutterspeechrecognizerifly.dart';
 import 'package:flutter/cupertino.dart';
@@ -39,6 +40,7 @@ class _StartProductPageState extends State<StartProductPage> {
   @override
   void dispose() {
     // TODO: implement dispose
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -48,6 +50,9 @@ class _StartProductPageState extends State<StartProductPage> {
     super.initState();
     initPlatformState();
     init();
+
+
+
   }
 
 
@@ -96,14 +101,7 @@ class _StartProductPageState extends State<StartProductPage> {
       contentType: 'multipart/form-data;boundary=<calculated when request is sent>',
     );
     var response = await Dio(options).request('http://39.105.219.200:18080/imageClassifyController/classify',data: FormData.fromMap({'file':await MultipartFile.fromFile(filepath)}));
-
-
-
-    // var url = Uri.parse('http://39.105.219.200:18080/imageClassifyController/classify');
-    // var response = await http.post(url, body: FormData.fromMap({'file':_img}));
-    // print(response.request);
-    // print('Response status: ${response.statusCode}');
-    // print('Response body: ${response.body}');
+    
     if(response.statusCode == 200) {
       setState(() {
         print(response.data);

@@ -46,6 +46,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    _nameController.dispose();
+    _passwordController.dispose();
+    _nodeText1.dispose();
+    _nodeText2.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
 
    return Scaffold(
@@ -100,6 +110,8 @@ class _LoginPageState extends State<LoginPage> {
 
              GestureDetector(
                onTap: () {
+                 // NavigatorUtil.pushReplacementNamed(context, MyHomePage());
+
                  if(_nameController.text==''){
                    Toast.show('用户名不能为空');
                  }else if(_passwordController.text==''){
